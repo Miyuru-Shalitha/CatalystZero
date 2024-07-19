@@ -6,6 +6,7 @@
 #include "log.hpp"
 #include "editor.hpp"
 #include "arena_allocator.hpp"
+#include "file_reader.hpp"
 
 static AppData app_data = {};
 
@@ -29,6 +30,46 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
 {
     app_data.width = width;
     app_data.height = height;
+}
+
+static GLuint create_shader(const char* vertex_shader_source, const char* fragment_shader_source)
+{
+    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+    glCompileShader(vertex_shader);
+
+    GLint success;
+    GLchar infoLog[512] = {};
+
+    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+
+    if (!success)
+    {
+        glGetShaderInfoLog(vertex_shader, 512, NULL, infoLog);
+        CZ_ASSERT(false, "%s", infoLog);
+    }
+
+    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+    glCompileShader(fragment_shader);
+
+    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+
+    if (!success)
+    {
+        glGetShaderInfoLog(fragment_shader, 512, NULL, infoLog);
+        CZ_ASSERT(false, "%s", infoLog);
+    }
+
+    GLuint static_shader_program = glCreateProgram();
+    glAttachShader(static_shader_program, vertex_shader);
+    glAttachShader(static_shader_program, fragment_shader);
+    glLinkProgram(static_shader_program);
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    glValidateProgram(static_shader_program);
+
+    return static_shader_program;
 }
 
 int main()
@@ -145,6 +186,10 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    char* default_shader_vertex_source = read_file(&app_data.transiant_storage, "../../../Resources/shaders/default.vs.glsl");
+    char* default_shader_fragment_source = read_file(&app_data.transiant_storage, "../../../Resources/shaders/default.fs.glsl");
+    GLuint default_shader_program = create_shader(default_shader_vertex_source, default_shader_fragment_source);
     ///////////////////////
 
     initialize_ecs(&app_data.persistance_storage, &app_data.ecs_data);
@@ -164,6 +209,8 @@ int main()
 
         glViewport(0, 0, 1920, 1080);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(default_shader_program);
 
         glBindVertexArray(vertex_array);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
