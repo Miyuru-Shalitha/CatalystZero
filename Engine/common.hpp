@@ -14,7 +14,8 @@ struct AppData
     ECSData ecs_data;
     Input input;
     GLFWwindow* window;
-    bool is_running;
-    int width, height;
     float dt;
+    int width, height;
+    unsigned int scene_texture_id;
+    bool is_running;
 };

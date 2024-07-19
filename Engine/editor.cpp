@@ -21,6 +21,43 @@ static EditorData editor_data = {
     .persistance_storage = arena_create(MB(50)),
 };
 
+static ImVec2 get_target_size(ImVec2 actual_size, ImVec2 available_size)
+{
+    // Calculate aspect ratios
+    float texture_aspect_ration = (float)actual_size.x / (float)actual_size.y;
+    float window_aspect_ratio = available_size.x / available_size.y;
+
+    ImVec2 target_size;
+
+    if (texture_aspect_ration < window_aspect_ratio)
+    {
+        // Texture is wider than window
+        target_size.x = available_size.x;
+        target_size.y = available_size.x / texture_aspect_ration;
+    }
+    else
+    {
+        // Texture is taller than window
+        target_size.x = available_size.y * texture_aspect_ration;
+        target_size.y = available_size.y;
+    }
+
+    // Calculate offset to center the texture
+    ImVec2 offset(
+        (available_size.x - target_size.x) * 0.5f,
+        (available_size.y - target_size.y) * 0.5f
+    );
+
+    ImGui::SetCursorPos(
+        ImVec2(
+            ImGui::GetCursorPos().x + offset.x,
+            ImGui::GetCursorPos().y + offset.y
+        )
+    );
+
+    return target_size;
+}
+
 void initialize_editor(AppData* app_data)
 {
     editor_data.app_data = app_data;
@@ -133,7 +170,7 @@ void update_editor()
 
     if (ImGui::Begin("Scene View", nullptr, ImGuiWindowFlags_NoScrollbar))
     {
-        //ImGui::Image((void*)sceneTextureID, GetTargetSize(ImVec2(width, height), ImGui::GetContentRegionAvail()), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((void*)editor_data.app_data->scene_texture_id, get_target_size(ImVec2(1920, 1080), ImGui::GetContentRegionAvail()), ImVec2(0, 1), ImVec2(1, 0));
     }
     ImGui::End();
     
