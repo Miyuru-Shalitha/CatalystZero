@@ -1,6 +1,13 @@
 #define GLFW_INCLUDE_NONE
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
+#include <glm/ext/scalar_constants.hpp> // glm::pi
+#include <glm/gtc/type_ptr.hpp>
 
 #include "game.hpp"
 #include "log.hpp"
@@ -196,6 +203,12 @@ int main()
     initialize_editor(&app_data);
     initialize_game();
 
+    glm::mat4 model(1.0);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    glm::mat4 view(1.0);
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.3f));
+    glm::mat4 projection = glm::ortho(-1.6f, 1.6f, -0.9f, 0.9f, 0.1f, 100.0f);
+
     while (app_data.is_running)
     {
         glfwPollEvents();
@@ -211,6 +224,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(default_shader_program);
+
+        unsigned int model_location = glGetUniformLocation(default_shader_program, "model");
+        glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+
+        unsigned int view_location = glGetUniformLocation(default_shader_program, "view");
+        glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view));
+
+        unsigned int projection_location = glGetUniformLocation(default_shader_program, "projection");
+        glUniformMatrix4fv(projection_location, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(vertex_array);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

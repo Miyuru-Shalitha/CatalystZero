@@ -36,6 +36,7 @@ target_include_directories(
     PUBLIC ThirdParty/glad/include
     PUBLIC ThirdParty/imgui-docking
 	PUBLIC ThirdParty/imgui-docking/backends
+	PUBLIC ThirdParty/glm-1.0.1
 )
 
 target_link_libraries(
