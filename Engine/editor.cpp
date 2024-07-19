@@ -7,6 +7,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include "log.hpp"
+#include "string.hpp"
 
 struct EditorData
 {
@@ -14,11 +15,12 @@ struct EditorData
     Arena persistance_storage;
     AppData* app_data;
     unsigned int selected_entity_id;
+    char entity_count_char;
 };
 
 static EditorData editor_data = {
     .transiant_storage = arena_create(MB(50)),
-    .persistance_storage = arena_create(MB(50)),
+    .persistance_storage = arena_create(MB(50))
 };
 
 static ImVec2 get_target_size(ImVec2 actual_size, ImVec2 available_size)
@@ -126,7 +128,9 @@ void update_editor()
             if (ImGui::MenuItem("Add Entity"))
             {
                 Entity entity = create_entity();
-                add_transform_component(entity.id);
+                editor_data.selected_entity_id = entity.id;
+                TransformComponent* transform = add_transform_component(entity.id);
+                transform->scale = { 1.0f, 1.0f, 1.0f };
             }
 
             if (ImGui::BeginMenu("Add Lights"))
@@ -146,7 +150,11 @@ void update_editor()
             for (size_t i = 0; i < editor_data.app_data->ecs_data.entity_size; i++)
             {
                 unsigned int entity_handle = editor_data.app_data->ecs_data.entities[i].id;
-                bool is_open = ImGui::TreeNodeEx("Entity", ImGuiTreeNodeFlags_SpanAvailWidth);
+                ImGuiTreeNodeFlags flags = (editor_data.selected_entity_id == entity_handle) ? 
+                                            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Selected : 
+                                            ImGuiTreeNodeFlags_SpanAvailWidth;
+
+                bool is_open = ImGui::TreeNodeEx("Entity", flags);
 
                 if (ImGui::IsItemClicked())
                 {
@@ -260,10 +268,15 @@ void update_editor()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backupCurrentContext);
     }
+
+    arena_reset(&editor_data.transiant_storage);
 }
 
 void shutdown_editor()
 {
+    arena_free(&editor_data.transiant_storage);
+    arena_free(&editor_data.persistance_storage);
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

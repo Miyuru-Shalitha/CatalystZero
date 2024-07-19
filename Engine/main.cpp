@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_NONE
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
@@ -8,6 +9,8 @@
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include "game.hpp"
 #include "log.hpp"
@@ -117,14 +120,14 @@ int main()
     glfwSetWindowSizeCallback(app_data.window, window_resize_callback);
 
     /////////////////////////////////////////////////
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
-    //glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);
 
     static float vertices[20] = {
         // Positions          
@@ -203,39 +206,51 @@ int main()
     initialize_editor(&app_data);
     initialize_game();
 
-    glm::mat4 model(1.0);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    glm::mat4 view(1.0);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.3f));
-    glm::mat4 projection = glm::ortho(-1.6f, 1.6f, -0.9f, 0.9f, 0.1f, 100.0f);
-
     while (app_data.is_running)
     {
         glfwPollEvents();
 
         glViewport(0, 0, app_data.width, app_data.height);
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glBindTexture(GL_TEXTURE_2D, app_data.scene_texture_id);
 
         glViewport(0, 0, 1920, 1080);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(default_shader_program);
 
-        unsigned int model_location = glGetUniformLocation(default_shader_program, "model");
-        glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+        /////////////////////////////////
+        glm::mat4 view(1.0);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.3f));
+        glm::mat4 projection = glm::ortho(-1.6f, 1.6f, -0.9f, 0.9f, 0.1f, 100.0f);
+        /////////////////////////////////
 
-        unsigned int view_location = glGetUniformLocation(default_shader_program, "view");
-        glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view));
+        for (size_t i = 0; i < app_data.ecs_data.transform_size; i++)
+        {
+            TransformComponent* transform = &app_data.ecs_data.transforms[i];
 
-        unsigned int projection_location = glGetUniformLocation(default_shader_program, "projection");
-        glUniformMatrix4fv(projection_location, 1, GL_FALSE, glm::value_ptr(projection));
+            glm::mat4 model(1.0);
+            model = glm::translate(model, glm::vec3(transform->position.x, transform->position.y, transform->position.z));
+            glm::quat quaternion = glm::quat(glm::vec3(glm::vec3(transform->rotation.x, transform->rotation.y, transform->rotation.z)));
+            glm::mat4 rotation_matrix = glm::toMat4(quaternion);
+            model = model * rotation_matrix;
+            model = glm::scale(model, glm::vec3(transform->scale.x, transform->scale.y, transform->scale.z));
 
-        glBindVertexArray(vertex_array);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            unsigned int model_location = glGetUniformLocation(default_shader_program, "model");
+            glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+
+            unsigned int view_location = glGetUniformLocation(default_shader_program, "view");
+            glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view));
+
+            unsigned int projection_location = glGetUniformLocation(default_shader_program, "projection");
+            glUniformMatrix4fv(projection_location, 1, GL_FALSE, glm::value_ptr(projection));
+
+            glBindVertexArray(vertex_array);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -243,9 +258,13 @@ int main()
         update_game();
         
         glfwSwapBuffers(app_data.window);
+
+        arena_reset(&app_data.transiant_storage);
     }
 
     shutdown_editor();
+    arena_free(&app_data.transiant_storage);
+    arena_free(&app_data.persistance_storage);
 
     glfwDestroyWindow(app_data.window);
     glfwTerminate();
