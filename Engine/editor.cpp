@@ -239,13 +239,37 @@ void update_editor()
                     ImGui::TableSetColumnIndex(0);
                     ImGui::Text("Sprite");
                     ImGui::TableSetColumnIndex(1);
-                    ImGui::Text("Sprite");
+                    // TODO(Miyuru): Display the texture. And make drag and drop.
+                    ImGui::Text("Texture");
+                    //ImGui::Image()
 
                     ImGui::EndTable();
                 }
 
                 ImGui::TreePop();
             }
+        }
+
+        if (ImGui::Button("Add Component"))
+        {
+            ImGui::OpenPopup("Components Popup");
+        }
+
+        if (ImGui::BeginPopup("Components Popup"))
+        {
+            if (ImGui::MenuItem("Static Sprite"))
+            {
+                if (editor_data.selected_entity_id != -1)
+                {
+                    add_static_sprite_component(editor_data.selected_entity_id);
+                }
+                else
+                {
+                    // TODO(Miyuru): Log a warning to editor console
+                }
+            }
+
+            ImGui::EndPopup();
         }
     }
     ImGui::End(); // Inspector end
