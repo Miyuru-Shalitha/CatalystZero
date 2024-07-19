@@ -148,38 +148,59 @@ void update_editor()
 
     if (ImGui::Begin("Inspector"))
     {
-        if (editor_data.selected_entity_id != -1 && ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_Framed))
+        if (editor_data.selected_entity_id != -1)
         {
+            // Can optimize get_components to only get once when the entity is clicked in the hierarchy.
             TransformComponent* transform = get_transform_component(editor_data.selected_entity_id);
+            StaticSpriteComponent* static_sprite = get_static_sprite_component(editor_data.selected_entity_id);
 
-            if (ImGui::BeginTable("Transform", 2))
+            if (transform != nullptr && ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
-                //ImGui::TableSetupColumn("Transform");
-                //ImGui::TableSetupColumn("x");
-                //ImGui::TableHeadersRow();
+                if (ImGui::BeginTable("Transform", 2))
+                {
+                    //ImGui::TableSetupColumn("Transform");
+                    //ImGui::TableSetupColumn("x");
+                    //ImGui::TableHeadersRow();
 
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("Position");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::DragFloat3("##Position", &transform->position.x);
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Position");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::DragFloat3("##Position", &transform->position.x);
 
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("Rotation");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::DragFloat3("##Rotation", &transform->rotation.x);
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Rotation");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::DragFloat3("##Rotation", &transform->rotation.x);
 
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("Scale");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::DragFloat3("##Scale", &transform->scale.x);
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Scale");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::DragFloat3("##Scale", &transform->scale.x);
 
-                ImGui::EndTable();
+                    ImGui::EndTable();
+                }
+
+                ImGui::TreePop();
             }
 
-            ImGui::TreePop();
+            if (static_sprite != nullptr && ImGui::TreeNodeEx("Static Sprite", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                if (ImGui::BeginTable("Static Sprite", 2))
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Sprite");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("Sprite");
+
+                    ImGui::EndTable();
+                }
+
+                ImGui::TreePop();
+            }
         }
     }
     ImGui::End(); // Inspector end
@@ -187,9 +208,9 @@ void update_editor()
     ImGui::Render();
     int width, height;
     glfwGetFramebufferSize(editor_data.app_data->window, &width, &height);
-    glViewport(0, 0, width, height);
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    //glViewport(0, 0, width, height);
+    //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

@@ -25,6 +25,12 @@ static void window_close_callback(GLFWwindow* window)
     app_data.is_running = false;
 }
 
+static void window_resize_callback(GLFWwindow* window, int width, int height)
+{
+    app_data.width = width;
+    app_data.height = height;
+}
+
 int main()
 {
     app_data.transiant_storage = arena_create(MB(50));
@@ -60,6 +66,56 @@ int main()
 
     glfwSetKeyCallback(app_data.window, key_callback);
     glfwSetWindowCloseCallback(app_data.window, window_close_callback);
+    glfwSetWindowSizeCallback(app_data.window, window_resize_callback);
+
+    /////////////////////////////////////////////////
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glEnable(GL_DEPTH_TEST);
+
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    //glFrontFace(GL_CW);
+
+    static float vertices[20] = {
+        // Positions          
+        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, // Top-left
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // Bottom-left
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom-right
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f  // Top-right
+    };
+
+    static unsigned int indices[6] = {
+        0, 3, 2, 2, 1, 0
+    };
+
+    GLuint vertex_array;
+    glCreateVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
+
+    GLuint vertex_buffer;
+    glCreateBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 20, vertices, GL_STATIC_DRAW);
+
+    GLuint index_buffer;
+    glCreateBuffers(1, &index_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6, indices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    /////////////////////////////////////////////////
 
     initialize_ecs(&app_data.persistance_storage, &app_data.ecs_data);
     initialize_editor(&app_data);
@@ -67,10 +123,14 @@ int main()
 
     while (app_data.is_running)
     {
+        glfwPollEvents();
+
         glViewport(0, 0, app_data.width, app_data.height);
+        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glfwPollEvents();
+        glBindVertexArray(vertex_array);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         update_editor();
         update_game();

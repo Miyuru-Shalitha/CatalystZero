@@ -108,7 +108,7 @@ StaticSpriteComponent* get_static_sprite_component(unsigned int entity_handle)
         }
     }
 
-    CZ_ASSERT(false, "Component does not exists");
+    //CZ_ASSERT(false, "Component does not exists");
     return nullptr;
 }
 
