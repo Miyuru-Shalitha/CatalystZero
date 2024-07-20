@@ -7,6 +7,7 @@
 struct Entity
 {
     unsigned int id;
+    unsigned int parent_entity_handle;
 };
 
 struct TransformComponent
@@ -92,7 +93,8 @@ struct ECSData
 
 const ECSData* get_ecs_data();
 void initialize_ecs(Arena* persistance_storage, ECSData* ecs_data);
-Entity create_entity();
+Entity* create_entity();
+Entity* get_entity(unsigned int entity_handle);
 TransformComponent* add_transform_component(unsigned int entity_handle);
 TransformComponent* get_transform_component(unsigned int entity_handle);
 StaticSpriteComponent* add_static_sprite_component(unsigned int entity_handle);

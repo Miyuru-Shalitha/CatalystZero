@@ -35,3 +35,24 @@ inline char* concat_string(Arena* arena, const char* string_a, const char* strin
 
 	return string_space;
 }
+
+// From Chat-GPT
+inline const char* format_string(Arena* arena, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+
+	// Allocate memory for the formatted string
+	char* buffer = (char*)arena_alloc(arena, 256);
+	if (buffer == nullptr)
+	{
+		va_end(args);
+		return "Out of memory";
+	}
+
+	// Format the string
+	vsnprintf(buffer, 256, fmt, args);
+	va_end(args);
+
+	return buffer;
+}

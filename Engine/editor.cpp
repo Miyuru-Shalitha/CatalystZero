@@ -1,6 +1,7 @@
 #include "editor.hpp"
 
 #include <glad/glad.h>
+#include <iostream>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -16,6 +17,7 @@ struct EditorData
     AppData* app_data;
     unsigned int selected_entity_id;
     char entity_count_char;
+    bool select_entity_handle_as_parent;
 };
 
 static EditorData editor_data = {
@@ -58,6 +60,51 @@ static ImVec2 get_target_size(ImVec2 actual_size, ImVec2 available_size)
     );
 
     return target_size;
+}
+
+static void draw_entity_node(unsigned int current_entity_id, bool is_first)
+{
+    for (size_t i = 0; i < editor_data.app_data->ecs_data.entity_size; i++)
+    {
+        if (is_first)
+        {
+            if (editor_data.app_data->ecs_data.entities[i].parent_entity_handle != -1)
+            {
+                continue;
+            }
+        }
+        else
+        {
+            if (editor_data.app_data->ecs_data.entities[i].parent_entity_handle != current_entity_id)
+            {
+                continue;
+            }
+        }
+
+        unsigned int entity_handle = editor_data.app_data->ecs_data.entities[i].id;
+        ImGuiTreeNodeFlags flags = (editor_data.selected_entity_id == entity_handle) ?
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Selected :
+            ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        bool is_open = ImGui::TreeNodeEx(format_string(&editor_data.transiant_storage, "Entity (%lli)", entity_handle), flags);
+
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+        {
+            editor_data.selected_entity_id = entity_handle;
+        }
+        else if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+        {
+            editor_data.selected_entity_id = entity_handle;
+            editor_data.select_entity_handle_as_parent = true;
+        }
+
+        if (is_open)
+        {
+            draw_entity_node(editor_data.app_data->ecs_data.entities[i].id, false);
+
+            ImGui::TreePop();
+        }
+    }
 }
 
 void initialize_editor(AppData* app_data)
@@ -122,15 +169,37 @@ void update_editor()
                 ImGui::OpenPopup("Menu");
             }
         }
+        //else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        //{
+        //    ImVec2 window_position = ImGui::GetWindowPos();
+        //    ImVec2 window_size = ImGui::GetWindowSize();
+        //    ImVec2 mouse_position = ImGui::GetMousePos();
+
+        //    if (
+        //        mouse_position.x >= window_position.x && mouse_position.x <= window_position.x + window_size.x &&
+        //        mouse_position.y >= window_position.y && mouse_position.y <= window_position.y + window_size.y
+        //        )
+        //    {
+        //        editor_data.selected_entity_id = -1;
+        //    }
+        //}
 
         if (ImGui::BeginPopup("Menu"))
         {
             if (ImGui::MenuItem("Add Entity"))
             {
-                Entity entity = create_entity();
-                editor_data.selected_entity_id = entity.id;
-                TransformComponent* transform = add_transform_component(entity.id);
+                Entity* entity = create_entity();
+                
+                if (editor_data.select_entity_handle_as_parent)
+                {
+                    entity->parent_entity_handle = editor_data.selected_entity_id;
+                }
+
+                TransformComponent* transform = add_transform_component(entity->id);
                 transform->scale = { 1.0f, 1.0f, 1.0f };
+
+                editor_data.selected_entity_id = entity->id;
+                editor_data.select_entity_handle_as_parent = false;
             }
 
             if (ImGui::BeginMenu("Add Lights"))
@@ -145,31 +214,16 @@ void update_editor()
             ImGui::EndPopup();
         }
         
-        if (ImGui::TreeNodeEx("TreeNode", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen))
+        // TODO(Miyuru): Display child entites as well.
+        if (ImGui::TreeNodeEx("Scene Root", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen))
         {
-            for (size_t i = 0; i < editor_data.app_data->ecs_data.entity_size; i++)
+            if (editor_data.app_data->ecs_data.entity_size > 0)
             {
-                unsigned int entity_handle = editor_data.app_data->ecs_data.entities[i].id;
-                ImGuiTreeNodeFlags flags = (editor_data.selected_entity_id == entity_handle) ? 
-                                            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Selected : 
-                                            ImGuiTreeNodeFlags_SpanAvailWidth;
-
-                bool is_open = ImGui::TreeNodeEx("Entity", flags);
-
-                if (ImGui::IsItemClicked())
-                {
-                    editor_data.selected_entity_id = entity_handle;
-                }
-
-                if (is_open)
-                {
-                    ImGui::TreePop();
-                }
+                draw_entity_node(editor_data.app_data->ecs_data.entities[0].id, true);
             }
 
             ImGui::TreePop();
         }
-
     }
     ImGui::End(); // Scene hierarchy end
 
@@ -193,6 +247,14 @@ void update_editor()
 
     if (ImGui::Begin("Inspector"))
     {
+        // TEMP ///////////////////////////
+        Entity* ent = get_entity(editor_data.selected_entity_id);
+        if (ent)
+        {
+            ImGui::Text("%lli", ent->parent_entity_handle);
+        }
+        ///////////////////////////////////
+
         if (editor_data.selected_entity_id != -1)
         {
             // Can optimize get_components to only get once when the entity is clicked in the hierarchy.

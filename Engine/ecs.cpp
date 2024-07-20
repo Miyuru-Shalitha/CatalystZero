@@ -57,13 +57,27 @@ void initialize_ecs(Arena* persistance_storage, ECSData* ecs_data)
     g_ecs_data->tilemaps = (TilemapComponent*)arena_alloc(persistance_storage, sizeof(TilemapComponent) * MAX_EC_COUNT);
 }
 
-Entity create_entity()
+Entity* create_entity()
 {
     Entity entity = {};
     entity.id = ++g_ecs_data->entity_handle_counter;
+    entity.parent_entity_handle = -1;
     g_ecs_data->entities[g_ecs_data->entity_size] = entity;
 
-    return g_ecs_data->entities[g_ecs_data->entity_size++];
+    return &g_ecs_data->entities[g_ecs_data->entity_size++];
+}
+
+Entity* get_entity(unsigned int entity_handle)
+{
+    for (size_t i = 0; i < g_ecs_data->entity_size; i++)
+    {
+        if (g_ecs_data->entities[i].id == entity_handle)
+        {
+            return &g_ecs_data->entities[i];
+        }
+    }
+
+    return nullptr;
 }
 
 TransformComponent* add_transform_component(unsigned int entity_handle)
