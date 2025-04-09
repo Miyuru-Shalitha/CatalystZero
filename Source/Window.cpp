@@ -4,14 +4,31 @@
 #include <glad/glad.h>
 #include <wglext.h>
 
+#include "EventSystem.hpp"
+#include "Application.hpp"
+
 namespace CatalystZero
 {
+    static HWND g_FakeWindow;
+
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         LRESULT result = { };
 
         switch (uMsg)
         {
+            case WM_CLOSE:
+            case WM_DESTROY:
+            {
+                if (g_FakeWindow == hwnd)
+                {
+                    break;
+                }
+
+                WindowClosedEvent event;
+                Application::GetInstance().OnEvent(event);
+            } break;
+
             default:
             {
                 result = DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -35,7 +52,7 @@ namespace CatalystZero
             // TODO(Miyuru): Log.
         }
         
-        HWND fakeWindow = CreateWindowExA(
+        g_FakeWindow = CreateWindowExA(
             0,
             wc.lpszClassName,
             "Fake_Window",
@@ -48,7 +65,7 @@ namespace CatalystZero
             nullptr
         );
         
-        HDC fakeDeviceContext = GetDC(fakeWindow);
+        HDC fakeDeviceContext = GetDC(g_FakeWindow);
         
         PIXELFORMATDESCRIPTOR fakePixelFormatDescriptor = { };
         fakePixelFormatDescriptor.nSize = sizeof(PIXELFORMATDESCRIPTOR);
@@ -192,14 +209,14 @@ namespace CatalystZero
             // TODO(Miyuru): Log.
         }
 
-        int releaseDeviceContextStatus = ReleaseDC(fakeWindow, fakeDeviceContext);
+        int releaseDeviceContextStatus = ReleaseDC(g_FakeWindow, fakeDeviceContext);
         
         if (releaseDeviceContextStatus == FALSE)
         {
             // TODO(Miyuru): Log.
         }
         
-        BOOL destroyWindowStatus = DestroyWindow(fakeWindow);
+        BOOL destroyWindowStatus = DestroyWindow(g_FakeWindow);
         
         if (destroyWindowStatus == FALSE)
         {

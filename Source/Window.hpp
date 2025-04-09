@@ -1,11 +1,6 @@
 #pragma once
 
-// This struct is temporary and it should be defined in like a 'Math.hpp' file.
-struct Vec2I
-{
-    int X;
-    int Y;
-};
+#include "Math.hpp"
 
 namespace CatalystZero
 {

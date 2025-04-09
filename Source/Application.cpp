@@ -6,8 +6,13 @@
 
 namespace CatalystZero
 {
+    Application* Application::s_Instance = nullptr;
+
     Application::Application()
-        : m_IsRunning(true) { }
+        : m_IsRunning(true)
+    {
+        s_Instance = this;
+    }
     
     Application::~Application() { }
 
@@ -26,5 +31,13 @@ namespace CatalystZero
 
             window.SwapBuffers();
         }
+    }
+    
+    void Application::OnEvent(const Event& event)
+    {
+        EventDispatcher dispatcher(event);
+        dispatcher.Dispatch<WindowClosedEvent>([&](const WindowClosedEvent& event) {
+            m_IsRunning = false;
+        });
     }
 }
