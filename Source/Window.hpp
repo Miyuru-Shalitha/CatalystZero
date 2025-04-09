@@ -24,6 +24,5 @@ namespace CatalystZero
         
     private:
         void* m_Handle;
-        void* m_DeviceContext;
     };
 }
