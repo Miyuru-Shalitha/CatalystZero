@@ -1,9 +1,13 @@
 #include "Application.hpp"
 
+#include <Windows.h>
+#include <iostream>
+
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include "ImmediateModeRenderer.hpp"
 #include "RenderCommands.hpp"
+#include "Timer.hpp"
 
 namespace CatalystZero
 {
@@ -23,9 +27,13 @@ namespace CatalystZero
         // Renderer renderer;
         ImmediateModeRenderer immediateModeRenderer;
 
+        Timer timer;
+
         while (m_IsRunning)
         {
             window.ProcessEvents();
+            
+            std::cout << timer.GetDeltaTime() << "\n";
             
             Vec2I windowSize = window.GetSize();
             RenderCommand::SetViewport(0, 0, windowSize.X, windowSize.Y);
@@ -35,6 +43,11 @@ namespace CatalystZero
             immediateModeRenderer.DrawQuad();
 
             window.SwapBuffers();
+
+            LARGE_INTEGER currentCounter;
+            QueryPerformanceCounter(&currentCounter);
+
+            timer.Tick();
         }
     }
     
