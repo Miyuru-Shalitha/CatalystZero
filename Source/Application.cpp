@@ -1,6 +1,5 @@
 #include "Application.hpp"
 
-#include <Windows.h>
 #include <iostream>
 
 #include "Window.hpp"
@@ -43,9 +42,6 @@ namespace CatalystZero
             immediateModeRenderer.DrawQuad();
 
             window.SwapBuffers();
-
-            LARGE_INTEGER currentCounter;
-            QueryPerformanceCounter(&currentCounter);
 
             timer.Tick();
         }
